@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disaster Tracker & Alerts</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.2.1/adapter.min.js"></script>
+    <script src="https://ipapi.co/json/?callback=getUserLocation"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        nav { background: #007bff; padding: 10px; }
+        nav a { color: white; margin: 10px; text-decoration: none; font-size: 18px; }
+        .container { max-width: 800px; margin: auto; }
+        button { font-size: 18px; padding: 10px 20px; margin: 10px; cursor: pointer; }
+        #map { height: 400px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="#" onclick="showPage('home')">Home</a>
+        <a href="#" onclick="showPage('about')">About</a>
+        <a href="#" onclick="showPage('contact')">Emergency Contacts</a>
+    </nav>
+
+    <div id="home" class="container">
+        <h2>Disaster Tracker & Alerts</h2>
+        <p>View real-time disaster alerts.</p>
+        <div id="map"></div>
+    </div>
+
+    <div id="about" class="container" style="display:none;">
+        <h2>About This Project</h2>
+        <p>This project provides real-time disaster alerts and emergency contacts.</p>
+    </div>
+
+    <div id="contact" class="container" style="display:none;">
+        <h2>Emergency Contacts</h2>
+        <p>Your country: <strong id="country">Detecting...</strong></p>
+        <button id="policeBtn" style="display:none;">🚨 Call Police</button>
+        <button id="ambulanceBtn" style="display:none;">🚑 Call Ambulance</button>
+        <button id="fireBtn" style="display:none;">🔥 Call Fire</button>
+        <h3>VoIP Emergency Call</h3>
+        <button onclick="startVoIPCall()">Start Call</button>
+        <video id="localVideo" autoplay playsinline></video>
+    </div>
+
+    <script>
+        function showPage(page) {
+            document.getElementById("home").style.display = page === "home" ? "block" : "none";
+            document.getElementById("about").style.display = page === "about" ? "block" : "none";
+            document.getElementById("contact").style.display = page === "contact" ? "block" : "none";
+        }
+
+        // Initialize Map
+        var map = L.map('map').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Load disasters (simulated example)
+        function loadDisasters() {
+            let disasters = [
+                { name: "Earthquake", lat: 37.77, lon: -122.42 },
+                { name: "Flood", lat: -1.286389, lon: 36.817223 },
+                { name: "Hurricane", lat: 25.7617, lon: -80.1918 }
+            ];
+            disasters.forEach(d => {
+                L.marker([d.lat, d.lon]).addTo(map).bindPopup(`<b>${d.name}</b>`);
+            });
+        }
+        loadDisasters();
+
+        // Emergency numbers
+        const emergencyNumbers = {
+            "US": { police: "911", ambulance: "911", fire: "911" },
+            "GB": { police: "999", ambulance: "999", fire: "999" },
+            "KE": { police: "999", ambulance: "999", fire: "999" },
+            "IN": { police: "100", ambulance: "102", fire: "101" },
+            "AU": { police: "000", ambulance: "000", fire: "000" },
+            "CA": { police: "911", ambulance: "911", fire: "911" },
+        };
+
+        // Get User Country
+        function getUserLocation(data) {
+            let countryCode = data.country_code;
+            document.getElementById("country").innerText = data.country_name;
+            if (emergencyNumbers[countryCode]) {
+                let numbers = emergencyNumbers[countryCode];
+                document.getElementById("policeBtn").style.display = "inline-block";
+                document.getElementById("ambulanceBtn").style.display = "inline-block";
+                document.getElementById("fireBtn").style.display = "inline-block";
+                document.getElementById("policeBtn").onclick = () => window.location.href = `tel:${numbers.police}`;
+                document.getElementById("ambulanceBtn").onclick = () => window.location.href = `tel:${numbers.ambulance}`;
+                document.getElementById("fireBtn").onclick = () => window.location.href = `tel:${numbers.fire}`;
+            } else {
+                alert("Emergency numbers unavailable for your country.");
+            }
+        }
+
+        // VoIP Call (WebRTC)
+        async function startVoIPCall() {
+            try {
+                let stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                let videoElement = document.getElementById("localVideo");
+                videoElement.srcObject = stream;
+                alert("Connected. Your emergency call is now active.");
+            } catch (error) {
+                alert("Error starting VoIP call: " + error);
+            }
+        }
+    </script>
+
+</body>
+</html>
